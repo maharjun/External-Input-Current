@@ -54,6 +54,12 @@ namespace IExtInterface
 		float IRandDecayFactor;      // Random Current decay factor (Not used here)
 		float IExtAmplitude;         // Amplitude of External current stumulation
 		float AvgRandSpikeFreq;      // Average Random Frequency in Hertz
+
+		uint32_t MajorTimePeriod;    // Major Time Period of External Stimulation
+		uint32_t MajorOnTime;        // The Time amount during the period for which the external stimulation is applied
+		uint32_t MinorTimePeriod;    // The Time Period of repetition of External Pattern during ON Time
+		uint32_t NoOfNeurons;        // The No of neurons to which external stimulation is applied in each Minor Time Period
+
 		size_t OutputControl;
 
 		InputVarsStruct() {}
@@ -91,6 +97,11 @@ namespace IExtInterface
 		float IRandDecayFactor;
 		float IExtAmplitude;
 		float AvgRandSpikeFreq;
+
+		uint32_t MajorTimePeriod;
+		uint32_t MajorOnTime;
+		uint32_t MinorTimePeriod;
+		uint32_t NoOfNeurons;
 
 		size_t OutputControl;
 

@@ -83,27 +83,53 @@ void IExtInterface::takeInputVarsFromMatlabStruct(
 	mxArray * IExtMatlabInputStruct, 
 	InputArgs & SimulationInputArgs)
 {
+	// Aliasing input argument structs
+	auto & InputVars   = IExtInputVarsStruct;
+	auto & MatlabInput = IExtMatlabInputStruct;
+	auto & SimIntVars  = SimulationInputArgs;
+
 	// Giving Default Values to Optional Simulation Algorithm Parameters
-	IExtInputVarsStruct.IRandDecayFactor = 2.0f / 3;
-	IExtInputVarsStruct.IRandAmplitude = 20.0f;
-	IExtInputVarsStruct.IExtAmplitude  = 20.0f;
-	IExtInputVarsStruct.AvgRandSpikeFreq = 1.0;
+	InputVars.IRandDecayFactor = 2.0f / 3;
+	InputVars.IRandAmplitude = 20.0f;
+	InputVars.IExtAmplitude  = 20.0f;
+	InputVars.AvgRandSpikeFreq = 1.0;
+
+	InputVars.MajorTimePeriod = 15000;
+	InputVars.MajorOnTime     = 1000;
+	InputVars.MinorTimePeriod = 100;
+	InputVars.NoOfNeurons     = 60;
 
 	// Taking input for Optional Simulation Algorithm Parameters
-	getInputfromStruct<float>(IExtMatlabInputStruct, "Iext.IRandDecayFactor", IExtInputVarsStruct.IRandDecayFactor);
-	getInputfromStruct<float>(IExtMatlabInputStruct, "Iext.IRandAmplitude"  , IExtInputVarsStruct.IRandAmplitude  );
-	getInputfromStruct<float>(IExtMatlabInputStruct, "Iext.IExtAmplitude"   , IExtInputVarsStruct.IExtAmplitude   );
-	getInputfromStruct<float>(IExtMatlabInputStruct, "Iext.AvgRandSpikeFreq", IExtInputVarsStruct.AvgRandSpikeFreq);
-	if (IExtInputVarsStruct.AvgRandSpikeFreq > 10 || IExtInputVarsStruct.AvgRandSpikeFreq < 0) {
-		WriteOutput("AvgRandSpikeFreq is supposed to be between 0 to 10, it is currently %f\n", IExtInputVarsStruct.AvgRandSpikeFreq);
-	}
+	getInputfromStruct<float>(MatlabInput, "Iext.IRandDecayFactor", InputVars.IRandDecayFactor);
+	getInputfromStruct<float>(MatlabInput, "Iext.IRandAmplitude"  , InputVars.IRandAmplitude  );
+	getInputfromStruct<float>(MatlabInput, "Iext.IExtAmplitude"   , InputVars.IExtAmplitude   );
+	getInputfromStruct<float>(MatlabInput, "Iext.AvgRandSpikeFreq", InputVars.AvgRandSpikeFreq);
+
+	getInputfromStruct<uint32_t>(MatlabInput, "Iext.MajorTimePeriod", InputVars.MajorTimePeriod);
+	getInputfromStruct<uint32_t>(MatlabInput, "Iext.MajorOnTime"    , InputVars.MajorOnTime    );
+	getInputfromStruct<uint32_t>(MatlabInput, "Iext.MinorTimePeriod", InputVars.MinorTimePeriod);
+	getInputfromStruct<uint32_t>(MatlabInput, "Iext.NoOfNeurons"    , InputVars.NoOfNeurons    );
+
+	// Input Validation
+	if (InputVars.AvgRandSpikeFreq > 10 || InputVars.AvgRandSpikeFreq < 0)
+		WriteException(ExOps::EXCEPTION_INVALID_INPUT, 
+			"Iext.AvgRandSpikeFreq is supposed to be between 0 to 10, it is currently %f\n", InputVars.AvgRandSpikeFreq);
+	if (InputVars.MajorOnTime > InputVars.MajorTimePeriod)
+		WriteException(ExOps::EXCEPTION_INVALID_INPUT, 
+			"Iext.MajorOnTime is supposed to be in 0..Iext.MajorTimePeriod (=%d), it is currently %d\n", InputVars.MajorTimePeriod, InputVars.MajorOnTime);
+	if (InputVars.MinorTimePeriod > InputVars.MajorOnTime)
+		WriteException(ExOps::EXCEPTION_INVALID_INPUT, 
+			"Iext.MinorTimePeriod is supposed to be between 0 to Iext.MajorOnTime (=%d), it is currently %d\n", InputVars.MajorOnTime, InputVars.MinorTimePeriod);
+	if (InputVars.NoOfNeurons > InputVars.MinorTimePeriod)
+		WriteException(ExOps::EXCEPTION_INVALID_INPUT, 
+			"Iext.NoOfNeurons is supposed to be between 0 to Iext.MinorTimePeriod (=%d), it is currently %d\n", InputVars.MinorTimePeriod, InputVars.NoOfNeurons);
 
 	// Initializing OutputControl
 	// Get OutputControlString and OutputControl Word
-	mxArrayPtr genmxArrayPtr = getValidStructField(IExtMatlabInputStruct, "OutputControl", MexMemInputOps());
+	mxArrayPtr genmxArrayPtr = getValidStructField(MatlabInput, "OutputControl", MexMemInputOps());
 	if (genmxArrayPtr != NULL && !mxIsEmpty(genmxArrayPtr)) {
 		char * OutputControlSequence = mxArrayToString(genmxArrayPtr);
-		IExtInputVarsStruct.OutputControl = IExtInterface::getOutputControl(OutputControlSequence);
+		InputVars.OutputControl = IExtInterface::getOutputControl(OutputControlSequence);
 		mxFree(OutputControlSequence);
 	}
 }
@@ -154,6 +180,12 @@ void IExtInterface::initInternalVariables(
 	IntVars.IRandAmplitude   = InputVars.IRandAmplitude;
 	IntVars.IExtAmplitude    = InputVars.IExtAmplitude;
 	IntVars.AvgRandSpikeFreq = InputVars.AvgRandSpikeFreq;
+
+	IntVars.MajorTimePeriod  = InputVars.MajorTimePeriod;
+	IntVars.MajorOnTime      = InputVars.MajorOnTime    ;
+	IntVars.MinorTimePeriod  = InputVars.MinorTimePeriod;
+	IntVars.NoOfNeurons      = InputVars.NoOfNeurons    ;
+
 	IntVars.OutputControl    = InputVars.OutputControl;
 
 	// ---------- INITIALIZING STATE VARIABLES ---------- //
@@ -403,6 +435,11 @@ void IExtInterface::doInputVarsOutput(
 	InputVars.IExtAmplitude    = IntVars.IExtAmplitude;
 	InputVars.AvgRandSpikeFreq = IntVars.AvgRandSpikeFreq;
 
+	InputVars.MajorTimePeriod  = IntVars.MajorTimePeriod;
+	InputVars.MajorOnTime      = IntVars.MajorOnTime    ;
+	InputVars.MinorTimePeriod  = IntVars.MinorTimePeriod;
+	InputVars.NoOfNeurons      = IntVars.NoOfNeurons    ;
+
 	// Note that OutputControl for IExtInterface is not so much an input variable
 	// as an intermediate variable calculated from an input to the original Simu-
 	// lation. Thus, this variable will not be returned or passed as input to the
@@ -447,6 +484,10 @@ mxArrayPtr IExtInterface::putInputVarstoMATLABStruct(IExtInterface::InputVarsStr
 		"IRandAmplitude"  ,
 		"IExtAmplitude"   ,
 		"AvgRandSpikeFreq",
+		"MajorTimePeriod" ,
+		"MajorOnTime"     ,
+		"MinorTimePeriod" ,
+		"NoOfNeurons"     ,
 		nullptr
 	};
 	
@@ -464,6 +505,11 @@ mxArrayPtr IExtInterface::putInputVarstoMATLABStruct(IExtInterface::InputVarsStr
 	mxSetField(ReturnPointer, 0, "IRandAmplitude"  , assignmxArray(InputVars.IRandAmplitude  , mxSINGLE_CLASS));
 	mxSetField(ReturnPointer, 0, "IExtAmplitude"   , assignmxArray(InputVars.IExtAmplitude   , mxSINGLE_CLASS));
 	mxSetField(ReturnPointer, 0, "AvgRandSpikeFreq", assignmxArray(InputVars.AvgRandSpikeFreq, mxSINGLE_CLASS));
+
+	mxSetField(ReturnPointer, 0, "MajorTimePeriod" , assignmxArray(InputVars.MajorTimePeriod , mxUINT32_CLASS));
+	mxSetField(ReturnPointer, 0, "MajorOnTime"     , assignmxArray(InputVars.MajorOnTime     , mxUINT32_CLASS));
+	mxSetField(ReturnPointer, 0, "MinorTimePeriod" , assignmxArray(InputVars.MinorTimePeriod , mxUINT32_CLASS));
+	mxSetField(ReturnPointer, 0, "NoOfNeurons"     , assignmxArray(InputVars.NoOfNeurons     , mxUINT32_CLASS));
 
 	return ReturnPointer;
 }
@@ -573,9 +619,9 @@ void IExtInterface::updateIExt(
 	}
 
 	// Non-Random External Stimulation
-	if (Time % 15000 < 2000) {
-		if (Time % 200 < 60) {
-			IntVars.IExtNeuron = Time % 200 + 1;
+	if (Time % IntVars.MajorTimePeriod < IntVars.MajorOnTime) {
+		if (Time % IntVars.MinorTimePeriod < IntVars.NoOfNeurons) {
+			IntVars.IExtNeuron = Time % IntVars.MinorTimePeriod + 1;
 			IntVars.Iext[IntVars.IExtNeuron - 1] += IntVars.IExtAmplitude;
 		}
 	}

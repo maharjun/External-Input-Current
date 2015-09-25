@@ -3,8 +3,9 @@
 1.  The random component of current is a poisson distributed current 
     with adjustable Average frequency between 0-10Hz. Amplitude of 
     this stimulation is non adjustable at 20.0f
-2.  The External Current Is a Current spike to the first 60 neurons
-    once Every 200 ms for 2s every 15s. Its Amplitude is controllable
+2.  The External Current Is a Current spike to the first `NoOfNeurons`
+    neurons once Every `MinorTimePeriod` ms for `MajorOnTime` ms every 
+	`MinorTimePeriod` ms. Its Amplitude is controllable
 
 ## Usage:
 
@@ -28,36 +29,50 @@ following files are accessible.
     ..\..\..\MexMemoryInterfacing\Headers\GenericMexIO.hpp 
     ..\..\..\RandomNumGen\Headers\FiltRandomTBB.hpp        
 
-MexMemoryInterfacing Should contain all the generic IO functions. 
-it must also have the pop_back method. Thus it must be any version 
-later than or equal to 
+MexMemoryInterfacing Should contain all the generic IO functions, 
+pop_back, vWriteOutput, and WriteException functions. Thus it must 
+be any version later than or equal to 
 
-f56553b Added pop_back method
+e066904 Added vWriteOutput and WriteException
 
 ## Variables
 
-    | Variable         | Type     | Description
+	| Variable         | Type     | Description
 ====|==================|==========|=====================================
     |                  |          |
-    | Iext             | State    | External Current at current time
+  1.| Iext             | State    | External Current at current time
     |                  |          |
-    | IExtGenState     | State    | State of Random Number generator 
+  2.| IExtGenState     | State    | State of Random Number generator 
     |                  |          | at the end of the current interation
     |                  |          |
-    | IExtNeuron       | State    | The Neuron which received a non-zero
+  3.| IExtNeuron       | State    | The Neuron which received a non-zero
     |                  |          | Stimulation as apart of the external
     |                  |          | pattern
     |                  |          |
-    | IRandNeuron      | State    | The Neuron(s) which received a non-
+  4.| IRandNeuron      | State    | The Neuron(s) which received a non-
     |                  |          | zero stimulation as a part of the
     |                  |          | Random non-specific stimulation
-    |                  |          | 
-    | IRandAmplitude   | Input    | Amplitude of the random stimulation
+  5.| MajorTimePeriod  | Input    | The Major Time Period of the 
+    |                  |          | External Stimulation
     |                  |          |
-    | IRandDecayFactor | Input    | This is not used in the current sit-
+  6.| MajorOnTime      | Input    | The Amount of Time in the Major 
+    |                  |          | Time Period for which the External
+    |                  |          | Stimulation is On (<=MajorTimePeriod)
+    |                  |          |
+  7.| MinorTimePeriod  | Input    | The Time period of a single pattern
+    |                  |          | of IExt Stimulation 
+    |                  |          | (<=MajorOnTime)
+    |                  |          |
+  8.| NoOfNeurons      | Input    | The Number of neurons that are
+    |                  |          | Stimulated in the Iext pattern
+    |                  |          | (<=MinorTimePeriod)
+    |                  |          | 
+  9.| IRandAmplitude   | Input    | Amplitude of the random stimulation
+    |                  |          |
+ 10.| IRandDecayFactor | Input    | This is not used in the current sit-
     |                  |          | uation
     |                  |          |
-    | IExtAmplitude    | Input    | Amplitude of External Stimulation
+ 11.| IExtAmplitude    | Input    | Amplitude of External Stimulation
     |                  |          |
-    | AvgRandSpikeFreq | Input    | Average Frequency of random stimulation
+ 12.| AvgRandSpikeFreq | Input    | Average Frequency of random stimulation
 ====|==================|==========|====================================
