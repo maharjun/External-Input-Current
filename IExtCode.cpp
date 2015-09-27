@@ -213,25 +213,15 @@ void IExtInterface::StateOutStruct::initialize(
 
 	// Aliasing some Simulation Vatiables
 	auto & StorageStepSize = SimIntVars.StorageStepSize;
-	auto & beta = SimIntVars.beta;
 	auto & onemsbyTstep = SimIntVars.onemsbyTstep;
 	auto & N = SimIntVars.N;
 	auto   nSteps = SimIntVars.NoOfms * SimIntVars.onemsbyTstep;
 
-	// Initializing TimeDimLen
-	size_t TimeDimLen;
-	if (StorageStepSize) {
-		TimeDimLen = (nSteps >= beta) ? (nSteps - beta) / (StorageStepSize*onemsbyTstep) + 1 : 0;	//No. of times (StorageStepSize * onemsbyTstep)|time happens
-	}
-	else {
-		TimeDimLen = nSteps;
-	}
-
 	if (IntVars.OutputControl & IExtInterface::OutOps::GEN_STATE_REQ) {
-		this->GenStateOut = MexMatrix<uint32_t>(TimeDimLen, 4);
+		this->GenStateOut = MexMatrix<uint32_t>(0, 4);
 	}
 	if (IntVars.OutputControl & IExtInterface::OutOps::I_RAND_REQ) {
-		this->IrandOut = MexMatrix<float>(TimeDimLen, N);
+		this->IrandOut = MexMatrix<float>(0, N);
 	}
 }
 
@@ -245,32 +235,22 @@ void IExtInterface::OutputVarsStruct::initialize(
 
 	// Aliasing some Simulation Vatiables
 	auto & StorageStepSize = SimIntVars.StorageStepSize;
-	auto & beta            = SimIntVars.beta;
 	auto & onemsbyTstep    = SimIntVars.onemsbyTstep;
 	auto & N               = SimIntVars.N;
 	auto   nSteps          = SimIntVars.NoOfms * SimIntVars.onemsbyTstep;
 
-	// Initializing TimeDimLen
-	size_t TimeDimLen;
-	if (StorageStepSize) {
-		TimeDimLen = (nSteps >= beta) ? (nSteps - beta) / (StorageStepSize*onemsbyTstep) + 1 : 0;	//No. of times (StorageStepSize * onemsbyTstep)|time happens
-	}
-	else {
-		TimeDimLen = nSteps;
-	}
-
 	if (IntVars.OutputControl & IExtInterface::OutOps::I_EXT_WO_RAND_REQ) {
-		this->IextWORand = MexMatrix<float>(TimeDimLen, N);
+		this->IextWORand = MexMatrix<float>(0, N);
 	}
 	if (IntVars.OutputControl & IExtInterface::OutOps::I_EXT_TOTAL_REQ) {
-		this->IextTotal = MexMatrix<float>(TimeDimLen, N);
+		this->IextTotal = MexMatrix<float>(0, N);
 	}
 }
 
 ////////////////////////////////////////////////////////
 // C++ Output Functions 
 ////////////////////////////////////////////////////////
-void IExtInterface::doSparseOutput(
+void IExtInterface::doOutput(
 	IExtInterface::StateOutStruct     & IExtStateOutStruct,
 	IExtInterface::OutputVarsStruct   & IExtOutputVarsStruct,
 	IExtInterface::InternalVarsStruct & IExtInternalVarsStruct,
@@ -284,76 +264,33 @@ void IExtInterface::doSparseOutput(
 
 	// Aliasing some simulation variables
 	auto &i               = SimIntVars.i;
-	auto &beta            = SimIntVars.beta;
+	auto &Time            = SimIntVars.Time;
 	auto &onemsbyTstep    = SimIntVars.onemsbyTstep;
 	auto &StorageStepSize = SimIntVars.StorageStepSize;
 
 	// Initializing some relevant constants
-	size_t CurrentInsertPos = (i - beta) / (onemsbyTstep * StorageStepSize);
 	size_t IRandIter        = i % 8192;
 
 	// Aliasing some IExtInterface variables
 	auto &OutputControl = IntVars.OutputControl;
 
-	// ------------------ OUTPUTTING STATE VARIABLES ------------------ //
+	if (StorageStepSize && (Time % (StorageStepSize*onemsbyTstep) == 0) || !StorageStepSize) {
 
-	if (IntVars.OutputControl & IExtInterface::OutOps::GEN_STATE_REQ) {
-		StateOut.GenStateOut[CurrentInsertPos] = IntVars.GenMat[IRandIter];
-	}
-	if (IntVars.OutputControl & IExtInterface::OutOps::I_RAND_REQ) {
-		StateOut.IrandOut[CurrentInsertPos] = IntVars.RandMat[IRandIter];
-	}
+		// ------------------ OUTPUTTING STATE VARIABLES ------------------ //
+		if (IntVars.OutputControl & IExtInterface::OutOps::GEN_STATE_REQ) {
+			StateOut.GenStateOut.push_row(IntVars.GenMat[IRandIter]);
+		}
+		if (IntVars.OutputControl & IExtInterface::OutOps::I_RAND_REQ) {
+			StateOut.IrandOut.push_row(IntVars.RandMat[IRandIter]);
+		}
 
-	// ------------------ OUTPUTTING OUTPUT VARIABLES ------------------ //
-
-	if (IntVars.OutputControl & IExtInterface::OutOps::I_EXT_WO_RAND_REQ) {
-		OutVars.IextWORand[CurrentInsertPos] = IntVars.IextWORand;
-	}
-	if (IntVars.OutputControl & IExtInterface::OutOps::I_EXT_TOTAL_REQ) {
-		OutVars.IextTotal[CurrentInsertPos] = IntVars.Iext;
-	}
-}
-
-void IExtInterface::doFullOutput(
-	IExtInterface::StateOutStruct     & IExtStateOutStruct, 
-	IExtInterface::OutputVarsStruct   & IExtOutputVarsStruct,
-	IExtInterface::InternalVarsStruct & IExtInternalVarsStruct, 
-	InternalVars                      & SimulationInternalVars)
-{
-	// Aliasing above function parameter structs
-	auto &IntVars    = IExtInternalVarsStruct;
-	auto &OutVars    = IExtOutputVarsStruct;
-	auto &StateOut   = IExtStateOutStruct;
-	auto &SimIntVars = SimulationInternalVars;
-
-	// Aliasing some simulation variables
-	auto &i               = SimIntVars.i;
-	auto &beta            = SimIntVars.beta;
-	auto &StorageStepSize = SimIntVars.StorageStepSize;
-
-	// Initializing some relevant constants
-	size_t CurrentInsertPos = i - 1;
-	size_t IRandIter        = i % 8192;
-
-	// Aliasing some IExtInterface variables
-	auto &OutputControl = IntVars.OutputControl;
-
-	// ------------------ OUTPUTTING STATE VARIABLES ------------------ //
-
-	if (IntVars.OutputControl & IExtInterface::OutOps::GEN_STATE_REQ) {
-		StateOut.GenStateOut[CurrentInsertPos] = IntVars.GenMat[IRandIter];
-	}
-	if (IntVars.OutputControl & IExtInterface::OutOps::I_RAND_REQ) {
-		StateOut.IrandOut[CurrentInsertPos] = IntVars.RandMat[IRandIter];
-	}
-
-	// ------------------ OUTPUTTING OUTPUT VARIABLES ------------------ //
-
-	if (IntVars.OutputControl & IExtInterface::OutOps::I_EXT_WO_RAND_REQ) {
-		OutVars.IextWORand[CurrentInsertPos] = IntVars.IextWORand;
-	}
-	if (IntVars.OutputControl & IExtInterface::OutOps::I_EXT_TOTAL_REQ) {
-		OutVars.IextTotal[CurrentInsertPos] = IntVars.Iext;
+		// ------------------ OUTPUTTING OUTPUT VARIABLES ------------------ //
+		if (IntVars.OutputControl & IExtInterface::OutOps::I_EXT_WO_RAND_REQ) {
+			OutVars.IextWORand.push_row(IntVars.IextWORand);
+		}
+		if (IntVars.OutputControl & IExtInterface::OutOps::I_EXT_TOTAL_REQ) {
+			OutVars.IextTotal.push_row(IntVars.Iext);
+		}
 	}
 }
 
