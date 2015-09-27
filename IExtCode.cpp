@@ -249,34 +249,25 @@ void IExtInterface::StateOutStruct::initialize(
 
 	// Aliasing some Simulation Vatiables
 	auto & StorageStepSize = SimIntVars.StorageStepSize;
-	auto & beta = SimIntVars.beta;
 	auto & onemsbyTstep = SimIntVars.onemsbyTstep;
 	auto & N = SimIntVars.N;
 	auto   nSteps = SimIntVars.NoOfms * SimIntVars.onemsbyTstep;
 
-	// Initializing TimeDimLen
-	size_t TimeDimLen;
-	if (StorageStepSize) {
-		TimeDimLen = (nSteps >= beta) ? (nSteps - beta) / (StorageStepSize*onemsbyTstep) + 1 : 0;	//No. of times (StorageStepSize * onemsbyTstep)|time happens
-	}
-	else {
-		TimeDimLen = nSteps;
-	}
 	// Intializing some relevant constants
 	int IRandNeuronSize = (int)(IntVars.AvgRandSpikeFreq * 1000 + (SimIntVars.N - 1) + 0.5) / SimIntVars.N; // ceil(round(AvgRandSpikeFreq * 1000)/N)
 
 	// Initializing state variables output struct based on output options
 	if (IntVars.OutputControl & IExtInterface::OutOps::I_EXT_GEN_STATE_REQ) {
-		this->IExtGenStateOut = MexMatrix<uint32_t>(TimeDimLen, 4);
+		this->IExtGenStateOut = MexMatrix<uint32_t>(0, 4);
 	}
 	if (IntVars.OutputControl & IExtInterface::OutOps::I_EXT_REQ) {
-		this->IextOut = MexMatrix<float>(TimeDimLen, N);
+		this->IextOut = MexMatrix<float>(0, N);
 	}
 	if (IntVars.OutputControl & IExtInterface::OutOps::I_EXT_NEURON_REQ) {
-		this->IExtNeuronOut = MexVector<int>(TimeDimLen);
+		this->IExtNeuronOut = MexVector<int>(0);
 	}
 	if (IntVars.OutputControl & IExtInterface::OutOps::I_RAND_NEURON_REQ) {
-		this->IRandNeuronOut = MexMatrix<int>(TimeDimLen, IRandNeuronSize);
+		this->IRandNeuronOut = MexMatrix<int>(0, IRandNeuronSize);
 	}
 }
 
@@ -290,19 +281,9 @@ void IExtInterface::OutputVarsStruct::initialize(
 
 	// Aliasing some Simulation Vatiables
 	auto & StorageStepSize = SimIntVars.StorageStepSize;
-	auto & beta            = SimIntVars.beta;
 	auto & onemsbyTstep    = SimIntVars.onemsbyTstep;
 	auto & N               = SimIntVars.N;
 	auto   nSteps          = SimIntVars.NoOfms * SimIntVars.onemsbyTstep;
-
-	// Initializing TimeDimLen
-	size_t TimeDimLen;
-	if (StorageStepSize) {
-		TimeDimLen = (nSteps >= beta) ? (nSteps - beta) / (StorageStepSize*onemsbyTstep) + 1 : 0;	//No. of times (StorageStepSize * onemsbyTstep)|time happens
-	}
-	else {
-		TimeDimLen = nSteps;
-	}
 
 	// Initializing Output Variables according to output options
 	// Currently there are no Output variables
@@ -311,7 +292,7 @@ void IExtInterface::OutputVarsStruct::initialize(
 ////////////////////////////////////////////////////////
 // C++ Output Functions 
 ////////////////////////////////////////////////////////
-void IExtInterface::doSparseOutput(
+void IExtInterface::doOutput(
 	IExtInterface::StateOutStruct     & IExtStateOutStruct,
 	IExtInterface::OutputVarsStruct   & IExtOutputVarsStruct,
 	IExtInterface::InternalVarsStruct & IExtInternalVarsStruct,
@@ -325,77 +306,34 @@ void IExtInterface::doSparseOutput(
 
 	// Aliasing some simulation variables
 	auto &i               = SimIntVars.i;
-	auto &beta            = SimIntVars.beta;
+	auto &Time            = SimIntVars.Time;
 	auto &onemsbyTstep    = SimIntVars.onemsbyTstep;
 	auto &StorageStepSize = SimIntVars.StorageStepSize;
-	auto &DelayRange      = SimIntVars.DelayRange;
 
 	// Initializing some relevant constants
-	size_t CurrentInsertPos = (i - beta) / (onemsbyTstep * StorageStepSize);
-	size_t QueueSize        = onemsbyTstep * DelayRange;
 
 	// Aliasing some IExtInterface variables
 	auto &OutputControl = IntVars.OutputControl;
 
-	// ------------------ OUTPUTTING STATE VARIABLES ------------------ //
+	if (StorageStepSize && (Time % (StorageStepSize*onemsbyTstep) == 0) || !StorageStepSize) {
 
-	if (IntVars.OutputControl & IExtInterface::OutOps::I_EXT_GEN_STATE_REQ) {
-		IntVars.IExtGen.getstate().ConvertStatetoVect(StateOut.IExtGenStateOut[CurrentInsertPos]);
+		// ------------------ OUTPUTTING STATE VARIABLES ------------------ //
+		if (IntVars.OutputControl & IExtInterface::OutOps::I_EXT_GEN_STATE_REQ) {
+			StateOut.IExtGenStateOut.push_row_size(1);
+			IntVars.IExtGen.getstate().ConvertStatetoVect(StateOut.IExtGenStateOut.lastRow());
+		}
+		if (IntVars.OutputControl & IExtInterface::OutOps::I_EXT_REQ) {
+			StateOut.IextOut.push_row(IntVars.Iext);
+		}
+		if (IntVars.OutputControl & IExtInterface::OutOps::I_EXT_NEURON_REQ) {
+			StateOut.IExtNeuronOut.push_back(IntVars.IExtNeuron);
+		}
+		if (IntVars.OutputControl & IExtInterface::OutOps::I_RAND_NEURON_REQ) {
+			StateOut.IRandNeuronOut.push_row(IntVars.IRandNeuron);
+		}
+		// ------------------ OUTPUTTING OUTPUT VARIABLES ------------------ //
+		// No output variables
 	}
-	if (IntVars.OutputControl & IExtInterface::OutOps::I_EXT_REQ) {
-		StateOut.IextOut[CurrentInsertPos] = IntVars.Iext;
-	}
-	if (IntVars.OutputControl & IExtInterface::OutOps::I_EXT_NEURON_REQ) {
-		StateOut.IExtNeuronOut[CurrentInsertPos] = IntVars.IExtNeuron;
-	}
-	if (IntVars.OutputControl & IExtInterface::OutOps::I_RAND_NEURON_REQ) {
-		StateOut.IRandNeuronOut[CurrentInsertPos] = IntVars.IRandNeuron;
-	}
-	// ------------------ OUTPUTTING OUTPUT VARIABLES ------------------ //
-
-	// No output variables
-}
-
-void IExtInterface::doFullOutput(
-	IExtInterface::StateOutStruct     & IExtStateOutStruct, 
-	IExtInterface::OutputVarsStruct   & IExtOutputVarsStruct,
-	IExtInterface::InternalVarsStruct & IExtInternalVarsStruct, 
-	InternalVars                      & SimulationInternalVars)
-{
-	// Aliasing above function parameter structs
-	auto &IntVars    = IExtInternalVarsStruct;
-	auto &OutVars    = IExtOutputVarsStruct;
-	auto &StateOut   = IExtStateOutStruct;
-	auto &SimIntVars = SimulationInternalVars;
-
-	// Aliasing some simulation variables
-	auto &i               = SimIntVars.i;
-	auto &beta            = SimIntVars.beta;
-	auto &StorageStepSize = SimIntVars.StorageStepSize;
-
-	// Initializing some relevant constants
-	size_t CurrentInsertPos = i - 1;
-
-	// Aliasing some IExtInterface variables
-	auto &OutputControl = IntVars.OutputControl;
-
-	// ------------------ OUTPUTTING STATE VARIABLES ------------------ //
-
-	if (IntVars.OutputControl & IExtInterface::OutOps::I_EXT_GEN_STATE_REQ) {
-		IntVars.IExtGen.getstate().ConvertStatetoVect(StateOut.IExtGenStateOut[CurrentInsertPos]);
-	}
-	if (IntVars.OutputControl & IExtInterface::OutOps::I_EXT_REQ) {
-		StateOut.IextOut[CurrentInsertPos] = IntVars.Iext;
-	}
-	if (IntVars.OutputControl & IExtInterface::OutOps::I_EXT_NEURON_REQ) {
-		StateOut.IExtNeuronOut[CurrentInsertPos] = IntVars.IExtNeuron;
-	}
-	if (IntVars.OutputControl & IExtInterface::OutOps::I_RAND_NEURON_REQ) {
-		StateOut.IRandNeuronOut[CurrentInsertPos] = IntVars.IRandNeuron;
-	}
-	// ------------------ OUTPUTTING OUTPUT VARIABLES ------------------ //
-
-	// No output variables
 }
 
 void IExtInterface::doSingleStateOutput(
