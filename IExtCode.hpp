@@ -110,13 +110,7 @@ namespace IExtInterface
 		InputArgs &SimulationInputArgs);
 
 	// C++ Output Functions
-	void doSparseOutput(
-		IExtInterface::StateOutStruct     &IExtStateOutStruct,
-		IExtInterface::OutputVarsStruct   &IExtOutputVarsStruct,
-		IExtInterface::InternalVarsStruct &IExtInternalVarsStruct,
-		InternalVars                      &SimulationInternalVars);
-
-	void doFullOutput(
+	void doOutput(
 		IExtInterface::StateOutStruct     &IExtStateOutStruct,
 		IExtInterface::OutputVarsStruct   &IExtOutputVarsStruct,
 		IExtInterface::InternalVarsStruct &IExtInternalVarsStruct,
