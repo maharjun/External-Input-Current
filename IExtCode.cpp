@@ -8,9 +8,20 @@
 #include "..\NeuronSim.hpp"
 
 #include <matrix.h>
-#include "..\..\..\MexMemoryInterfacing\Headers\MexMem.hpp"
-#include "..\..\..\MexMemoryInterfacing\Headers\GenericMexIO.hpp"
-#include "..\..\..\RandomNumGen\Headers\FiltRandomTBB.hpp"
+
+#if defined TIME_DEL_NET_SIM_AS_SUB
+	#define HEADER_PATHS_TDNS ..
+#elif !defined HEADER_PATHS_TDNS
+	#define HEADER_PATHS_TDNS .
+#endif
+
+#define SETQUOTE(A) #A
+#define JOIN_STRING(A,B,C) SETQUOTE(A##B##C)
+#define JOIN_LIB_PATH(PRE, CENT, POST) JOIN_STRING(PRE, CENT, POST)
+
+#include JOIN_LIB_PATH(..\..\..\, HEADER_PATHS_TDNS, \MexMemoryInterfacing\Headers\MexMem.hpp)
+#include JOIN_LIB_PATH(..\..\..\, HEADER_PATHS_TDNS, \MexMemoryInterfacing\Headers\GenericMexIO.hpp)
+#include JOIN_LIB_PATH(..\..\..\, HEADER_PATHS_TDNS, \RandomNumGen\Headers\FiltRandomTBB.hpp)
 
 ////////////////////////////////////////////////////////
 // Input and Initialization functions 
@@ -136,7 +147,7 @@ void IExtInterface::initInternalVariables(
 	// Initializing Input Vars
 	IntVars.IExtDecayFactor = InputVars.IExtDecayFactor;
 	IntVars.IExtScaleFactor = InputVars.IExtScaleFactor;
-	IntVars.OutputControl   = InputVars.OutputControl;
+	IntVars.OutputControl = InputVars.OutputControl;
 
 	// ---------- INITIALIZING STATE VARIABLES ---------- //
 
@@ -160,10 +171,10 @@ void IExtInterface::initInternalVariables(
 		IntVars.Iext.resize(N, 0.0f);
 	else
 		IntVars.Iext = InitState.Iext;
-	
+
 	// Initializing IExtNeuron
 	IntVars.IExtNeuron = InitState.IExtNeuron;
-
+	
 }
 
 ////////////////////////////////////////////////////////
@@ -183,8 +194,8 @@ void IExtInterface::StateOutStruct::initialize(
 	const InternalVars                      & SimulationInternalVars)
 {
 	// Aliasing above funtion parameter structs
-	auto & IntVars = IExtInternalVarsStruct;
-	auto & SimIntVars = SimulationInternalVars;
+	auto &IntVars = IExtInternalVarsStruct;
+	auto &SimIntVars = SimulationInternalVars;
 
 	// Aliasing some Simulation Vatiables
 	auto & StorageStepSize = SimIntVars.StorageStepSize;
@@ -303,7 +314,7 @@ void IExtInterface::doInputVarsOutput(
 	
 	// Note that OutputControl for IExtInterface is not so much an input variable
 	// as an intermediate variable calculated from an input to the original Simu-
-	// lation. Thus, this variable will not be returned or passed as input to the
+	// lation. Thus, this variablewill not be  returned or passed as input to the
 	// Simulation function
 }
 
