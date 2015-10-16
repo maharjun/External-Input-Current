@@ -100,7 +100,7 @@ namespace IExtInterface
 
 		MexMatrix<float> RandMat;
 		MexMatrix<uint32_t> GenMat;
-		BandLimGaussVect Irand;
+		BandLimGaussVect<float> Irand;
 		MexVector<float> IextWORand;
 		MexVector<float> Iext;
 
