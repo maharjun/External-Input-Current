@@ -415,7 +415,7 @@ mxArrayPtr IExtInterface::putStateVarstoMATLABStruct(IExtInterface::StateOutStru
 	auto & StateVars = IExtStateOutStruct;
 	
 	// Performing output of Input variables
-	mxSetField(ReturnPointer, 0, "GenState", assignmxArray(StateVars.GenStateOut, mxSINGLE_CLASS));
+	mxSetField(ReturnPointer, 0, "GenState", assignmxArray(StateVars.GenStateOut, mxUINT32_CLASS));
 	mxSetField(ReturnPointer, 0, "Irand"   , assignmxArray(StateVars.IrandOut   , mxSINGLE_CLASS));
 
 	return ReturnPointer;
