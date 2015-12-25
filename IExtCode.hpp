@@ -12,11 +12,11 @@
 #endif
 
 #define SETQUOTE(A) #A
-#define JOIN_STRING(A,B,C) SETQUOTE(A##B##C)
-#define JOIN_LIB_PATH(PRE, CENT, POST) JOIN_STRING(PRE, CENT, POST)
 
-#include JOIN_LIB_PATH(..\..\..\, HEADER_PATHS_TDNS, \MexMemoryInterfacing\Headers\MexMem.hpp)
-#include JOIN_LIB_PATH(..\..\..\, HEADER_PATHS_TDNS, \RandomNumGen\Headers\FiltRandomTBB.hpp)
+#define SETQUOTE_EXPAND(A) SETQUOTE(A)
+
+#include SETQUOTE_EXPAND(../../../HEADER_PATHS_TDNS/MexMemoryInterfacing/Headers/MexMem.hpp)
+#include SETQUOTE_EXPAND(../../../HEADER_PATHS_TDNS/RandomNumGen/Headers/FiltRandomTBB.hpp)
 
 struct InternalVars;
 struct InputArgs;
@@ -112,12 +112,12 @@ namespace IExtInterface
 	// Input and Initialization Functions
 	void takeInputVarsFromMatlabStruct(
 		IExtInterface::InputVarsStruct &IExtInputVarsStruct,
-		mxArray * MatlabInputStruct,
+		const mxArray* MatlabInputStruct,
 		InputArgs &SimulationInputArgs);
 
 	void takeInitialStateFromMatlabStruct(
 		IExtInterface::SingleStateStruct &IExtInitialStateStruct,
-		mxArray * MatlabInputStruct,
+		const mxArray* MatlabInputStruct,
 		InputArgs &SimulationInputArgs);
 
 	void initInternalVariables(

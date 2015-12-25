@@ -2,10 +2,11 @@
 #include <cstring>
 #include <cctype>
 #include <string>
+#include <vector>
 #include <algorithm>
 
-#include "..\Network.hpp"
-#include "..\NeuronSim.hpp"
+#include "../Network.hpp"
+#include "../NeuronSim.hpp"
 
 #include <matrix.h>
 
@@ -16,25 +17,25 @@
 #endif
 
 #define SETQUOTE(A) #A
-#define JOIN_STRING(A,B,C) SETQUOTE(A##B##C)
-#define JOIN_LIB_PATH(PRE, CENT, POST) JOIN_STRING(PRE, CENT, POST)
 
-#include JOIN_LIB_PATH(..\..\..\, HEADER_PATHS_TDNS, \MexMemoryInterfacing\Headers\MexMem.hpp)
-#include JOIN_LIB_PATH(..\..\..\, HEADER_PATHS_TDNS, \MexMemoryInterfacing\Headers\GenericMexIO.hpp)
-#include JOIN_LIB_PATH(..\..\..\, HEADER_PATHS_TDNS, \RandomNumGen\Headers\FiltRandomTBB.hpp)
+#define SETQUOTE_EXPAND(A) SETQUOTE(A)
+
+#include SETQUOTE_EXPAND(../../../HEADER_PATHS_TDNS/MexMemoryInterfacing/Headers/MexMem.hpp)
+#include SETQUOTE_EXPAND(../../../HEADER_PATHS_TDNS/MexMemoryInterfacing/Headers/GenericMexIO.hpp)
+#include SETQUOTE_EXPAND(../../../HEADER_PATHS_TDNS/RandomNumGen/Headers/FiltRandomTBB.hpp)
 
 ////////////////////////////////////////////////////////
 // Input and Initialization functions 
 ////////////////////////////////////////////////////////
 size_t IExtInterface::getOutputControl(char * OutputControlString)
 {
-	MexVector<std::string> OutputControlOptions;
+	std::vector<std::string> OutputControlOptions;
 	StringSplit(OutputControlString, " ,-", OutputControlOptions);
 	
 	// Defining case insensitive comparison function
 	auto CaseInsensitiveCharComp = [](char c1, char c2) -> bool { return std::tolower(c1) == std::tolower(c2);};
 	auto iEqual = [&](const std::string &s1, const std::string &s2) -> bool {
-		return std::equal(s1.begin(), s1.end(), s2.begin(), s2.end(), CaseInsensitiveCharComp);
+		return (s1.size() == s2.size()) && std::equal(s1.begin(), s1.end(), s2.begin(), CaseInsensitiveCharComp);
 	};
 
 	// Defining return variable
@@ -42,7 +43,7 @@ size_t IExtInterface::getOutputControl(char * OutputControlString)
 
 	for (auto OutContOpt : OutputControlOptions) {
 		// Split the current OutputControlOption by '.'
-		MexVector<std::string> OutputControlOptionParts;
+		std::vector<std::string> OutputControlOptionParts;
 		StringSplit(OutContOpt.data(), ".", OutputControlOptionParts);
 
 		bool AddorRemove = true; // TRUE for Add
@@ -85,7 +86,7 @@ size_t IExtInterface::getOutputControl(char * OutputControlString)
 
 void IExtInterface::takeInputVarsFromMatlabStruct(
 	IExtInterface::InputVarsStruct & IExtInputVarsStruct,
-	mxArray * IExtMatlabInputStruct, 
+	const mxArray* IExtMatlabInputStruct, 
 	InputArgs & SimulationInputArgs)
 {
 	// Giving Default Values to Optional Simulation Algorithm Parameters
@@ -98,7 +99,7 @@ void IExtInterface::takeInputVarsFromMatlabStruct(
 
 	// Initializing OutputControl
 	// Get OutputControlString and OutputControl Word
-	mxArrayPtr genmxArrayPtr = getValidStructField(IExtMatlabInputStruct, "OutputControl", MexMemInputOps());
+	const mxArray* genmxArrayPtr = getValidStructField(IExtMatlabInputStruct, "OutputControl", MexMemInputOps());
 	if (genmxArrayPtr != NULL && !mxIsEmpty(genmxArrayPtr)) {
 		char * OutputControlSequence = mxArrayToString(genmxArrayPtr);
 		IExtInputVarsStruct.OutputControl = IExtInterface::getOutputControl(OutputControlSequence);
@@ -108,7 +109,7 @@ void IExtInterface::takeInputVarsFromMatlabStruct(
 
 void IExtInterface::takeInitialStateFromMatlabStruct(
 	IExtInterface::SingleStateStruct & IExtInitialStateStruct, 
-	mxArray * IExtMatlabInitState, 
+	const mxArray* IExtMatlabInitState, 
 	InputArgs & SimulationInputArgs)
 {
 	int N = SimulationInputArgs.a.size();
