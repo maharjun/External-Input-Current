@@ -154,16 +154,16 @@ void IExtInterface::takeInitialStateFromMatlabStruct(
 	int N = SimulationInputArgs.a.size();
 	
 	// Initializing Irand
-	getInputfromStruct<float>(IExtMatlabInitState, "InitialState.Iext.Iext", IExtInitialStateStruct.Iext, 1, "required_size", N);
+	getInputfromStruct<float>(IExtMatlabInitState, "InitialState.Iext.Iext", IExtInitialStateStruct.Iext, getInputOps(1, "required_size", N));
 	
 	// Initializing IExtGenState
 	{
 		bool isNotSingleSeed =
 			getInputfromStruct<uint32_t>(IExtMatlabInitState, "InitialState.Iext.IExtGenState", IExtInitialStateStruct.IExtGenState,
-				2, "required_size", 1, "no_except");
+				getInputOps(2, "required_size", 1, "no_except"));
 		if (isNotSingleSeed)
 			getInputfromStruct<uint32_t>(IExtMatlabInitState, "InitialState.Iext.IExtGenState", IExtInitialStateStruct.IExtGenState,
-				1, "required_size", 4);
+				getInputOps(1, "required_size", 4));
 	}
 
 	// Initializing IExtNeuron
@@ -419,10 +419,10 @@ mxArrayPtr IExtInterface::putSingleStatetoMATLABStruct(IExtInterface::SingleStat
 	auto & SingleState = IExtSingleStateStruct;
 
 	// Performing output of Single State variables
-	mxSetField(ReturnPointer, 0, "IExtGenState", assignmxArray(SingleState.IExtGenState, mxUINT32_CLASS));
-	mxSetField(ReturnPointer, 0, "Iext"        , assignmxArray(SingleState.Iext        , mxSINGLE_CLASS));
-	mxSetField(ReturnPointer, 0, "IExtNeuron"  , assignmxArray(SingleState.IExtNeuron  , mxINT32_CLASS));
-	mxSetField(ReturnPointer, 0, "IRandNeuron" , assignmxArray(SingleState.IRandNeuron , mxINT32_CLASS));
+	mxSetField(ReturnPointer, 0, "IExtGenState", assignmxArray(SingleState.IExtGenState));
+	mxSetField(ReturnPointer, 0, "Iext"        , assignmxArray(SingleState.Iext        ));
+	mxSetField(ReturnPointer, 0, "IExtNeuron"  , assignmxArray<int32_t>(SingleState.IExtNeuron  ));
+	mxSetField(ReturnPointer, 0, "IRandNeuron" , assignmxArray(SingleState.IRandNeuron ));
 
 	return ReturnPointer;
 }
@@ -451,15 +451,15 @@ mxArrayPtr IExtInterface::putInputVarstoMATLABStruct(IExtInterface::InputVarsStr
 	auto & InputVars = IExtInputVarsStruct;
 	
 	// Performing output of Input variables
-	mxSetField(ReturnPointer, 0, "IRandDecayFactor", assignmxArray(InputVars.IRandDecayFactor, mxSINGLE_CLASS));
-	mxSetField(ReturnPointer, 0, "IRandAmplitude"  , assignmxArray(InputVars.IRandAmplitude  , mxSINGLE_CLASS));
-	mxSetField(ReturnPointer, 0, "IExtAmplitude"   , assignmxArray(InputVars.IExtAmplitude   , mxSINGLE_CLASS));
-	mxSetField(ReturnPointer, 0, "AvgRandSpikeFreq", assignmxArray(InputVars.AvgRandSpikeFreq, mxSINGLE_CLASS));
+	mxSetField(ReturnPointer, 0, "IRandDecayFactor", assignmxArray<float>(InputVars.IRandDecayFactor));
+	mxSetField(ReturnPointer, 0, "IRandAmplitude"  , assignmxArray<float>(InputVars.IRandAmplitude  ));
+	mxSetField(ReturnPointer, 0, "IExtAmplitude"   , assignmxArray<float>(InputVars.IExtAmplitude   ));
+	mxSetField(ReturnPointer, 0, "AvgRandSpikeFreq", assignmxArray<float>(InputVars.AvgRandSpikeFreq));
 
-	mxSetField(ReturnPointer, 0, "MajorTimePeriod" , assignmxArray(InputVars.MajorTimePeriod , mxUINT32_CLASS));
-	mxSetField(ReturnPointer, 0, "MajorOnTime"     , assignmxArray(InputVars.MajorOnTime     , mxUINT32_CLASS));
-	mxSetField(ReturnPointer, 0, "MinorTimePeriod" , assignmxArray(InputVars.MinorTimePeriod , mxUINT32_CLASS));
-	mxSetField(ReturnPointer, 0, "NoOfNeurons"     , assignmxArray(InputVars.NoOfNeurons     , mxUINT32_CLASS));
+	mxSetField(ReturnPointer, 0, "MajorTimePeriod" , assignmxArray<uint32_t>(InputVars.MajorTimePeriod ));
+	mxSetField(ReturnPointer, 0, "MajorOnTime"     , assignmxArray<uint32_t>(InputVars.MajorOnTime     ));
+	mxSetField(ReturnPointer, 0, "MinorTimePeriod" , assignmxArray<uint32_t>(InputVars.MinorTimePeriod ));
+	mxSetField(ReturnPointer, 0, "NoOfNeurons"     , assignmxArray<uint32_t>(InputVars.NoOfNeurons     ));
 
 	return ReturnPointer;
 }
@@ -484,10 +484,10 @@ mxArrayPtr IExtInterface::putStateVarstoMATLABStruct(IExtInterface::StateOutStru
 	auto & StateVars = IExtStateOutStruct;
 	
 	// Performing output of Input variables
-	mxSetField(ReturnPointer, 0, "IExtGenState", assignmxArray(StateVars.IExtGenStateOut, mxUINT32_CLASS));
-	mxSetField(ReturnPointer, 0, "Iext"        , assignmxArray(StateVars.IextOut        , mxSINGLE_CLASS));
-	mxSetField(ReturnPointer, 0, "IExtNeuron"  , assignmxArray(StateVars.IExtNeuronOut  , mxINT32_CLASS));
-	mxSetField(ReturnPointer, 0, "IRandNeuron" , assignmxArray(StateVars.IRandNeuronOut , mxINT32_CLASS));
+	mxSetField(ReturnPointer, 0, "IExtGenState", assignmxArray(StateVars.IExtGenStateOut));
+	mxSetField(ReturnPointer, 0, "Iext"        , assignmxArray(StateVars.IextOut        ));
+	mxSetField(ReturnPointer, 0, "IExtNeuron"  , assignmxArray(StateVars.IExtNeuronOut  ));
+	mxSetField(ReturnPointer, 0, "IRandNeuron" , assignmxArray(StateVars.IRandNeuronOut ));
 
 	return ReturnPointer;
 }
