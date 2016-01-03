@@ -119,16 +119,16 @@ void IExtInterface::takeInitialStateFromMatlabStruct(
 	int N = SimulationInputArgs.a.size();
 	
 	// Initializing Irand
-	getInputfromStruct<float>(IExtMatlabInitState, "InitialState.Iext.Irand", IExtInitialStateStruct.Irand, 1, "required_size", N);
+	getInputfromStruct<float>(IExtMatlabInitState, "InitialState.Iext.Irand", IExtInitialStateStruct.Irand, getInputOps(1, "required_size", N));
 	
 	// Initializing GenState
 	{
 		bool isNotSingleSeed =
 			getInputfromStruct<uint32_t>(IExtMatlabInitState, "InitialState.Iext.GenState", IExtInitialStateStruct.GenState,
-				2, "required_size", 1, "no_except");
+				getInputOps(2, "required_size", 1, "no_except"));
 		if (isNotSingleSeed)
 			getInputfromStruct<uint32_t>(IExtMatlabInitState, "InitialState.Iext.GenState", IExtInitialStateStruct.GenState,
-				1, "required_size", 4);
+				getInputOps(1, "required_size", 4));
 	}
 }
 
@@ -368,8 +368,8 @@ mxArrayPtr IExtInterface::putSingleStatetoMATLABStruct(IExtInterface::SingleStat
 	auto & SingleState = IExtSingleStateStruct;
 
 	// Performing output of Single State variables
-	mxSetField(ReturnPointer, 0, "GenState", assignmxArray(SingleState.GenState, mxUINT32_CLASS));
-	mxSetField(ReturnPointer, 0, "Irand"   , assignmxArray(SingleState.Irand   , mxSINGLE_CLASS));
+	mxSetField(ReturnPointer, 0, "GenState", assignmxArray(SingleState.GenState));
+	mxSetField(ReturnPointer, 0, "Irand"   , assignmxArray(SingleState.Irand   ));
 
 	return ReturnPointer;
 }
@@ -392,8 +392,8 @@ mxArrayPtr IExtInterface::putInputVarstoMATLABStruct(IExtInterface::InputVarsStr
 	auto & InputVars = IExtInputVarsStruct;
 	
 	// Performing output of Input variables
-	mxSetField(ReturnPointer, 0, "alpha" , assignmxArray(InputVars.alpha , mxSINGLE_CLASS));
-	mxSetField(ReturnPointer, 0, "StdDev", assignmxArray(InputVars.StdDev, mxSINGLE_CLASS));
+	mxSetField(ReturnPointer, 0, "alpha" , assignmxArray<float>(InputVars.alpha ));
+	mxSetField(ReturnPointer, 0, "StdDev", assignmxArray<float>(InputVars.StdDev));
 
 	return ReturnPointer;
 }
@@ -416,8 +416,8 @@ mxArrayPtr IExtInterface::putStateVarstoMATLABStruct(IExtInterface::StateOutStru
 	auto & StateVars = IExtStateOutStruct;
 	
 	// Performing output of Input variables
-	mxSetField(ReturnPointer, 0, "GenState", assignmxArray(StateVars.GenStateOut, mxUINT32_CLASS));
-	mxSetField(ReturnPointer, 0, "Irand"   , assignmxArray(StateVars.IrandOut   , mxSINGLE_CLASS));
+	mxSetField(ReturnPointer, 0, "GenState", assignmxArray(StateVars.GenStateOut));
+	mxSetField(ReturnPointer, 0, "Irand"   , assignmxArray(StateVars.IrandOut   ));
 
 	return ReturnPointer;
 }
@@ -440,8 +440,8 @@ mxArrayPtr IExtInterface::putOutputVarstoMATLABStruct(IExtInterface::OutputVarsS
 	auto & OutputVars = IExtOutputVarsStruct;
 
 	// Performing output of Input variables
-	mxSetField(ReturnPointer, 0, "IextTotal" , assignmxArray(OutputVars.IextTotal , mxSINGLE_CLASS));
-	mxSetField(ReturnPointer, 0, "IextWORand", assignmxArray(OutputVars.IextWORand, mxSINGLE_CLASS));
+	mxSetField(ReturnPointer, 0, "IextTotal" , assignmxArray(OutputVars.IextTotal ));
+	mxSetField(ReturnPointer, 0, "IextWORand", assignmxArray(OutputVars.IextWORand));
 
 	return ReturnPointer;
 }
