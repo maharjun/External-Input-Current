@@ -17,6 +17,7 @@
 
 #include SETQUOTE_EXPAND(../../../HEADER_PATHS_TDNS/MexMemoryInterfacing/Headers/MexMem.hpp)
 #include SETQUOTE_EXPAND(../../../HEADER_PATHS_TDNS/RandomNumGen/Headers/FiltRandomTBB.hpp)
+#include "IExtPattern.hpp"
 
 struct InternalVars;
 struct InputArgs;
@@ -65,14 +66,21 @@ namespace IExtInterface
 		float IExtAmplitude;         // Amplitude of External current stumulation
 		float AvgRandSpikeFreq;      // Average Random Frequency in Hertz
 
-		uint32_t MajorTimePeriod;    // Major Time Period of External Stimulation
-		uint32_t MajorOnTime;        // The Time amount during the period for which the external stimulation is applied
-		uint32_t MinorTimePeriod;    // The Time Period of repetition of External Pattern during ON Time
-		uint32_t NoOfNeurons;        // The No of neurons to which external stimulation is applied in each Minor Time Period
+		MexVector<uint32_t> StartOffsetArray;           // Array of Start offsets of the time intervals
+		MexVector<uint32_t> EndOffsetArray;             // Array of End offsets of the time intervals
+		MexVector<uint32_t> PatternTimePeriodArray;     // The Time Period of repetition of the pattern that occurs within the specified interval
+		MexVector<uint32_t> NeuronPatternIndexArray;    // The array containing the indices of the Neuron Pattern that is to be played in the specified interval
+		MexVector<MexVector<uint32_t> > NeuronPatterns; // The vector containing vectors of Time Intervals
+		MexVector<uint32_t> ParentIndexArray;           // This vector gives the index of the ancestor of the given node. (index = 1 => parent is 1st element)
 
 		size_t OutputControl;
 
-		InputVarsStruct() {}
+		InputVarsStruct() :
+			StartOffsetArray(),
+			EndOffsetArray(),
+			PatternTimePeriodArray(),
+			NeuronPatternIndexArray(),
+			NeuronPatterns() {}
 	};
 
 	struct StateOutStruct {
@@ -108,12 +116,10 @@ namespace IExtInterface
 		float IExtAmplitude;
 		float AvgRandSpikeFreq;
 
-		uint32_t MajorTimePeriod;
-		uint32_t MajorOnTime;
-		uint32_t MinorTimePeriod;
-		uint32_t NoOfNeurons;
-
 		size_t OutputControl;
+
+		IExtPatternProcessor IExtPattern;
+		IExtPatternProcessor::Iterator IExtPatternIter;
 
 		MexVector<float> Iext;
 		XorShiftPlus IExtGen;
@@ -124,11 +130,15 @@ namespace IExtInterface
 			Iext(),
 			IExtGen(), 
 			IRandNeuron(),
-			IExtNeuron(0) {}
+			IExtNeuron(0),
+			IExtPattern(),
+			IExtPatternIter(IExtPattern) {}
 	};
 
 	size_t getOutputControl(char *OutputControlString);
 
+	// Functions related to processing the IExt Patterns
+	
 	// Input and Initialization Functions
 	void takeInputVarsFromMatlabStruct(
 		IExtInterface::InputVarsStruct &IExtInputVarsStruct,

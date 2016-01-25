@@ -1,4 +1,5 @@
 #include "IExtCode.hpp"
+#include "IExtPattern.hpp"
 #include <cstring>
 #include <cctype>
 #include <string>
@@ -106,35 +107,25 @@ void IExtInterface::takeInputVarsFromMatlabStruct(
 	InputVars.IExtAmplitude  = 20.0f;
 	InputVars.AvgRandSpikeFreq = 1.0;
 
-	InputVars.MajorTimePeriod = 15000;
-	InputVars.MajorOnTime     = 1000;
-	InputVars.MinorTimePeriod = 100;
-	InputVars.NoOfNeurons     = 60;
-
 	// Taking input for Optional Simulation Algorithm Parameters
 	getInputfromStruct<float>(MatlabInput, "Iext.IRandDecayFactor", InputVars.IRandDecayFactor);
 	getInputfromStruct<float>(MatlabInput, "Iext.IRandAmplitude"  , InputVars.IRandAmplitude  );
 	getInputfromStruct<float>(MatlabInput, "Iext.IExtAmplitude"   , InputVars.IExtAmplitude   );
 	getInputfromStruct<float>(MatlabInput, "Iext.AvgRandSpikeFreq", InputVars.AvgRandSpikeFreq);
 
-	getInputfromStruct<uint32_t>(MatlabInput, "Iext.MajorTimePeriod", InputVars.MajorTimePeriod);
-	getInputfromStruct<uint32_t>(MatlabInput, "Iext.MajorOnTime"    , InputVars.MajorOnTime    );
-	getInputfromStruct<uint32_t>(MatlabInput, "Iext.MinorTimePeriod", InputVars.MinorTimePeriod);
-	getInputfromStruct<uint32_t>(MatlabInput, "Iext.NoOfNeurons"    , InputVars.NoOfNeurons    );
+	// Taking input for IExtPattern Arrays. These arrays are validate as a 
+	// part of Initialization of InternalVars
+	getInputfromStruct<uint32_t>(MatlabInput, "Iext.IExtPattern.StartOffsetArray"       , InputVars.StartOffsetArray       );
+	getInputfromStruct<uint32_t>(MatlabInput, "Iext.IExtPattern.EndOffsetArray"         , InputVars.EndOffsetArray         );
+	getInputfromStruct<uint32_t>(MatlabInput, "Iext.IExtPattern.PatternTimePeriodArray" , InputVars.PatternTimePeriodArray );
+	getInputfromStruct<uint32_t>(MatlabInput, "Iext.IExtPattern.NeuronPatternIndexArray", InputVars.NeuronPatternIndexArray);
+	getInputfromStruct<uint32_t>(MatlabInput, "Iext.IExtPattern.ParentIndexArray"       , InputVars.ParentIndexArray       );
+	getInputfromStruct<uint32_t>(MatlabInput, "Iext.IExtPattern.NeuronPatterns"         , InputVars.NeuronPatterns         );
 
 	// Input Validation
 	if (InputVars.AvgRandSpikeFreq > 10 || InputVars.AvgRandSpikeFreq < 0)
 		WriteException(ExOps::EXCEPTION_INVALID_INPUT, 
 			"Iext.AvgRandSpikeFreq is supposed to be between 0 to 10, it is currently %f\n", InputVars.AvgRandSpikeFreq);
-	if (InputVars.MajorOnTime > InputVars.MajorTimePeriod)
-		WriteException(ExOps::EXCEPTION_INVALID_INPUT, 
-			"Iext.MajorOnTime is supposed to be in 0..Iext.MajorTimePeriod (=%d), it is currently %d\n", InputVars.MajorTimePeriod, InputVars.MajorOnTime);
-	if (InputVars.MinorTimePeriod > InputVars.MajorOnTime)
-		WriteException(ExOps::EXCEPTION_INVALID_INPUT, 
-			"Iext.MinorTimePeriod is supposed to be between 0 to Iext.MajorOnTime (=%d), it is currently %d\n", InputVars.MajorOnTime, InputVars.MinorTimePeriod);
-	if (InputVars.NoOfNeurons > InputVars.MinorTimePeriod)
-		WriteException(ExOps::EXCEPTION_INVALID_INPUT, 
-			"Iext.NoOfNeurons is supposed to be between 0 to Iext.MinorTimePeriod (=%d), it is currently %d\n", InputVars.MinorTimePeriod, InputVars.NoOfNeurons);
 
 	// Initializing OutputControl
 	// Get OutputControlString and OutputControl Word
@@ -193,18 +184,55 @@ void IExtInterface::initInternalVariables(
 	IntVars.IExtAmplitude    = InputVars.IExtAmplitude;
 	IntVars.AvgRandSpikeFreq = InputVars.AvgRandSpikeFreq;
 
-	IntVars.MajorTimePeriod  = InputVars.MajorTimePeriod;
-	IntVars.MajorOnTime      = InputVars.MajorOnTime    ;
-	IntVars.MinorTimePeriod  = InputVars.MinorTimePeriod;
-	IntVars.NoOfNeurons      = InputVars.NoOfNeurons    ;
+	// Initializing required constants
+	int N = SimInputArgs.a.size();
+	int nSteps = SimInputArgs.NoOfms * SimInputArgs.onemsbyTstep;
+
+	// Validating and Initializing External Current Pattern Specification
+	int NTimeIntSpecs = InputVars.StartOffsetArray.size();
+
+	if (NTimeIntSpecs > 0) {
+		IntVars.IExtPattern.Initialize(
+			InputVars.StartOffsetArray,
+			InputVars.EndOffsetArray,
+			InputVars.PatternTimePeriodArray,
+			InputVars.NeuronPatternIndexArray,
+			InputVars.ParentIndexArray,
+			N, InputVars.NeuronPatterns);
+	}
+	else {
+		// Default pattern:
+		// from 0 to inf, Every 15000 ms
+		//     from 0 to 1000 ms, Every 100 ms
+		//         from 0 to end, Play Pattern 1
+		// 
+		// Pattern: 
+		//     [1-60]
+
+		typedef IExtPatternProcessor::TimeIntervalSpec TimeIntervalSpec;
+
+		MexVector<TimeIntervalSpec> TimeIntervalSpecArray;
+		MexVector<uint32_t> ParentIndexArray;
+		MexVector<NeuronPatternClass> NeuronPatterns;
+
+		TimeIntervalSpecArray.push_back(TimeIntervalSpec(0, 0, 15000, 0));
+		ParentIndexArray.push_back(0);
+
+		TimeIntervalSpecArray.push_back(TimeIntervalSpec(0, 1000, 100, 0));
+		ParentIndexArray.push_back(1);
+
+		TimeIntervalSpecArray.push_back(TimeIntervalSpec(0, 0, 0, 1));
+		ParentIndexArray.push_back(2);
+
+		NeuronPatterns.push_back(NeuronPatternClass(1000, MexVector<uint32_t>({ 1,60 })));
+
+		IntVars.IExtPattern.Initialize(TimeIntervalSpecArray, ParentIndexArray, N, NeuronPatterns);
+	}
+	IntVars.IExtPatternIter.initialize(SimInputArgs.InitialState.Time);
 
 	IntVars.OutputControl = InputVars.OutputControl;
 
 	// ---------- INITIALIZING STATE VARIABLES ---------- //
-
-	// Initializing required constants
-	int N = SimInputArgs.a.size();
-	int nSteps = SimInputArgs.NoOfms * SimInputArgs.onemsbyTstep;
 
 	// Initializing IExtGen from IExtGenState
 	XorShiftPlus::StateStruct RandCurrGenState;
@@ -385,10 +413,14 @@ void IExtInterface::doInputVarsOutput(
 	InputVars.IExtAmplitude    = IntVars.IExtAmplitude;
 	InputVars.AvgRandSpikeFreq = IntVars.AvgRandSpikeFreq;
 
-	InputVars.MajorTimePeriod  = IntVars.MajorTimePeriod;
-	InputVars.MajorOnTime      = IntVars.MajorOnTime    ;
-	InputVars.MinorTimePeriod  = IntVars.MinorTimePeriod;
-	InputVars.NoOfNeurons      = IntVars.NoOfNeurons    ;
+	// Assigning the IExtPattern related vectors
+	InputVars.StartOffsetArray        = IntVars.IExtPattern.getStartOffsetArray();
+	InputVars.EndOffsetArray          = IntVars.IExtPattern.getEndOffsetArray();
+	InputVars.PatternTimePeriodArray  = IntVars.IExtPattern.getPatternTimePeriodArray();
+	InputVars.NeuronPatternIndexArray = IntVars.IExtPattern.getNeuronPatternIndexArray();
+	
+	InputVars.ParentIndexArray        = IntVars.IExtPattern.getParentIndexArray();
+	InputVars.NeuronPatterns          = IntVars.IExtPattern.getNeuronPatterns();
 
 	// Note that OutputControl for IExtInterface is not so much an input variable
 	// as an intermediate variable calculated from an input to the original Simu-
@@ -434,10 +466,7 @@ mxArrayPtr IExtInterface::putInputVarstoMATLABStruct(IExtInterface::InputVarsStr
 		"IRandAmplitude"  ,
 		"IExtAmplitude"   ,
 		"AvgRandSpikeFreq",
-		"MajorTimePeriod" ,
-		"MajorOnTime"     ,
-		"MinorTimePeriod" ,
-		"NoOfNeurons"     ,
+		"IExtPattern"     ,
 		nullptr
 	};
 	
@@ -456,11 +485,29 @@ mxArrayPtr IExtInterface::putInputVarstoMATLABStruct(IExtInterface::InputVarsStr
 	mxSetField(ReturnPointer, 0, "IExtAmplitude"   , assignmxArray<float>(InputVars.IExtAmplitude   ));
 	mxSetField(ReturnPointer, 0, "AvgRandSpikeFreq", assignmxArray<float>(InputVars.AvgRandSpikeFreq));
 
-	mxSetField(ReturnPointer, 0, "MajorTimePeriod" , assignmxArray<uint32_t>(InputVars.MajorTimePeriod ));
-	mxSetField(ReturnPointer, 0, "MajorOnTime"     , assignmxArray<uint32_t>(InputVars.MajorOnTime     ));
-	mxSetField(ReturnPointer, 0, "MinorTimePeriod" , assignmxArray<uint32_t>(InputVars.MinorTimePeriod ));
-	mxSetField(ReturnPointer, 0, "NoOfNeurons"     , assignmxArray<uint32_t>(InputVars.NoOfNeurons     ));
+	// Performing output of IExtPattern Struct
+	const char* IExtPatternFieldNames[] = {
+		"StartOffsetArray"       ,
+		"EndOffsetArray"         ,
+		"PatternTimePeriodArray" ,
+		"NeuronPatternIndexArray",
+		"ParentIndexArray"       ,
+		"NeuronPatterns"         ,
+		nullptr
+	};
+	int NIExtPatternFields = 0;
+	for (; IExtPatternFieldNames[NIExtPatternFields] != nullptr; ++NIExtPatternFields);
+	mxArray * IExtPatternStruct = mxCreateStructArray(2, StructArraySize, NIExtPatternFields, IExtPatternFieldNames);
 
+	mxSetField(IExtPatternStruct, 0, "StartOffsetArray"       , assignmxArray(InputVars.StartOffsetArray       ));
+	mxSetField(IExtPatternStruct, 0, "EndOffsetArray"         , assignmxArray(InputVars.EndOffsetArray         ));
+	mxSetField(IExtPatternStruct, 0, "PatternTimePeriodArray" , assignmxArray(InputVars.PatternTimePeriodArray ));
+	mxSetField(IExtPatternStruct, 0, "NeuronPatternIndexArray", assignmxArray(InputVars.NeuronPatternIndexArray));
+	mxSetField(IExtPatternStruct, 0, "ParentIndexArray"       , assignmxArray(InputVars.ParentIndexArray       ));
+	mxSetField(IExtPatternStruct, 0, "NeuronPatterns"         , assignmxArray(InputVars.NeuronPatterns         ));
+
+	mxSetField(ReturnPointer, 0, "IExtPattern" , IExtPatternStruct);
+	
 	return ReturnPointer;
 }
 
@@ -539,7 +586,7 @@ void IExtInterface::updateIExt(
 	if (IntVars.IExtNeuron > 0) {
 		IntVars.Iext[IntVars.IExtNeuron - 1] = 0;
 		IntVars.IExtNeuron = 0;
-		}
+	}
 	
 
 	// Random Internal Stimulation
@@ -569,10 +616,10 @@ void IExtInterface::updateIExt(
 	}
 
 	// Non-Random External Stimulation
-	if (Time % IntVars.MajorTimePeriod < IntVars.MajorOnTime) {
-		if (Time % IntVars.MinorTimePeriod < IntVars.NoOfNeurons) {
-			IntVars.IExtNeuron = Time % IntVars.MinorTimePeriod + 1;
-			IntVars.Iext[IntVars.IExtNeuron - 1] += IntVars.IExtAmplitude;
-		}
-	}
+	// Update the IExtPatternIter as it still points to the previous 
+	// time instant
+	IntVars.IExtPatternIter.increment();
+	IntVars.IExtNeuron = IntVars.IExtPatternIter.dereference();
+	if (IntVars.IExtNeuron > 0)
+		IntVars.Iext[IntVars.IExtNeuron - 1] += IntVars.IExtAmplitude;
 }
