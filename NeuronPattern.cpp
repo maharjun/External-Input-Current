@@ -117,7 +117,7 @@ void IExtInterface::NeuronPatternClass::calculateTimingVector()
 	NeuronPatternTimingVect.resize(PatternSize);
 
 	bool isIndividualNeuron = false;
-	bool CurrentTimeOffset = 0;
+	uint32_t CurrentTimeOffset = 0;
 	for (size_t k = 0; k < PatternSize;) {
 		auto CurrentEntry = NeuronPatternVect[k];
 		if (CurrentEntry == 0) {
@@ -126,6 +126,7 @@ void IExtInterface::NeuronPatternClass::calculateTimingVector()
 			// first Neuron after it.
 			NeuronPatternTimingVect[k] = CurrentTimeOffset;
 			isIndividualNeuron = !isIndividualNeuron;
+			k++;
 		}
 		else {
 			if (isIndividualNeuron) {
