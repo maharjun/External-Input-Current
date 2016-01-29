@@ -146,7 +146,7 @@ public:
 		const uint32_t MaxNeuronIndex,
 		const MexVector<MexVector<uint32_t> > &NeuronPatterns_);
 
-	void IExtInterface::IExtPatternProcessor::Initialize(
+	void Initialize(
 		const MexVector<TimeIntervalSpec> & TimeIntervalSpecArray_,
 		const MexVector<uint32_t> & ParentIndexArray_,
 		const uint32_t MaxNeuronIndex,
