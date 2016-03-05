@@ -1,30 +1,30 @@
-## Current Description
+##  Current Description
 
-1.  The random component of current is a poisson distributed current 
-    with adjustable Average frequency between 0-10Hz. Amplitude of 
-    this stimulation is non adjustable at 20.0f
-2.  The External Current Is a Current spike to the first `NoOfNeurons`
-    neurons once Every `MinorTimePeriod` ms for `MajorOnTime` ms every 
-    `MinorTimePeriod` ms. Its Amplitude is controllable
+1.  The random component of current is a poisson distributed current with 
+    adjustable Average frequency between 0-10Hz. Amplitude of this stimulation 
+    is non adjustable at 20.0f
 
-## Usage:
+2.  The External Current Is specified as a spike pattern according to the 
+    structure described below. 
 
-It is compatible with all TimeDelNetSim versions which have defined 
-the following variables
+##  Usage:
 
-  `StorageStepSize     - ` Storage Step Size in ms.                              
-  `beta                - ` As calculated from Time and StorageStepSize           
-  `onemsbyTstep        - ` 1ms/TimeStep (integer)                                
-  `N                   - ` Number of Neurons                                     
-  `NoOfms              - ` No of ms to simulate for                              
-  `i                   - ` Loop Variable.                                        
-  `Time                - ` Simulation Time instant as no. of Time Steps since 0 
+It is compatible with all TimeDelNetSim versions which have defined the 
+following variables
 
-However, one may require to update the Visual Studio Project file
-to include the new header and cpp files to the project.
+    StorageStepSize - Storage Step Size in ms.
+    beta            - As calculated from Time and StorageStepSize
+    onemsbyTstep    - 1ms/TimeStep (integer)
+    N               - Number of Neurons
+    NoOfms          - No of ms to simulate for
+    i               - Loop Variable.
+    Time            - Simulation Time instant as no. of Time Steps since 0 
 
-It is required to be placed in the Headers Directory of Any project so 
-that the following files are accessible.
+However, one may require to update the Visual Studio Project file to include 
+the new header and cpp files to the project.
+
+It is required to be placed in the Headers Directory of Any project so that 
+the following files are accessible.
 
     ..\Network.hpp                                         
     ..\NeuronSim.hpp                                       
@@ -32,19 +32,19 @@ that the following files are accessible.
     ..\..\..\MexMemoryInterfacing\Headers\GenericMexIO.hpp 
     ..\..\..\RandomNumGen\Headers\FiltRandomTBB.hpp        
 
-MexMemoryInterfacing Should contain all the generic IO functions, 
-pop_back, vWriteOutput, and WriteException functions. It must also
-contain initialization using Initializer list. Thus it must 
-be any version later than or equal to 
+MexMemoryInterfacing Should contain all the generic IO functions, pop_back, 
+vWriteOutput, and WriteException functions. It must also contain initial-
+ization using Initializer list. Thus it must be any version later than or 
+equal to 
 
     edb61a3 Added Constructor by Initialization List for MexVector
 
-## IExtPattern Specification
+##  IExtPattern Specification
 
-The IExt Pattern is specified by a Pattern Tree as follows. The
-pattern tree is a tree of nested `time intervals`. Each time interval
-is specified by 4 unsigned integers. The deepest (leaf) interval links
-to a neuron pattern that is to be played.
+The IExt Pattern is specified by a Pattern Tree as follows. The pattern tree 
+is a tree of nested `time intervals`. Each time interval is specified by 4 
+unsigned integers. The deepest (leaf) interval links to a neuron pattern that 
+is to be played.
 
     1. StartOffset
     2. EndOffset
@@ -54,8 +54,7 @@ to a neuron pattern that is to be played.
 In addition to the above, associated to each interval is its `ParentIndex`,
 i.e. the index of its parent interval.
 
-Note that this scheme requires the following structure fields from 
-MATLAB :
+Note that this scheme requires the following structure fields from MATLAB :
 
     IExtPattern.StartOffsetArray        - uint32 vector
     IExtPattern.EndOffsetArray          - uint32 vector
@@ -67,12 +66,12 @@ MATLAB :
 
 The scheme is best described with an example.
 
-### Basic Example ###
+###   Basic Example
 consider the following pattern:
 
-    from 0 to inf, every 15000 ms
-        from 0 to 1000, every 100 ms
-            from 0 to end, execute Neuron Pattern 1
+    from 0 onwards, every 15000ms
+        from 0 to 1000, every 100ms
+            from 0 onwards, generate 1
     
     NeuronPattern: 1-60
 
@@ -92,24 +91,23 @@ for which we will have the following arrays as input
     
     NeuronPatterns          = {[1,60]};
 
-The NeuronPatterns will be represented by the following cell
-array
+The NeuronPatterns will be represented by the following cell array
 
     {[1,60], ...}
 
 where Neuron Pattern 1 is `[1,60]`
 
-### Multiple Sub-Intervals ###
+###   Multiple Sub-Intervals
 
-The above sheme can also have multiple time intervals as the child 
-of the same interval level as long as their [StartOffset, EndOffset) 
-dont overlap. for example the following pattern 
+The above scheme can also have multiple time intervals as the child of the 
+same interval level as long as their [StartOffset, EndOffset) dont overlap. 
+for example the following pattern 
 
-    from 0 to inf, every 15000 ms
+    from 0 onwards, every 15000 ms
         from 0 to 1000, every 100 ms
-            from 0 to end, execute Neuron Pattern 1
+            from 0 onwards, generate pattern 1
         from 2000 to 3000 every 200 ms
-            from 0 to end execute Neuron Pattern 2
+            from 0 onwards generate pattern 2
     
     NeuronPatterns: <length 2 cell array>
 
@@ -121,16 +119,16 @@ The tree would be as follows:
     4: (0, 0   , 200  , 0) -> Parent 1
     5: (0, 1000, 0    , 2) -> Parent 4
 
-### Finite length intervals 
+###   Finite length intervals
 
     from 0 to 120000, every 15000 ms
         from 0 to 1000, every 100 ms
-            from 0 to end, execute Neuron Pattern 1
+            from 0 onwards, generate pattern 1
         from 2000 to 3000 every 200 ms
-            from 0 to end execute Neuron Pattern 2
-    from 120000 to inf every 10000 ms
+            from 0 onwards generate pattern 2
+    from 120000 onwards every 10000 ms
         from 0 to 800, every 80 ms
-            from 0 to end, execute Neuron Pattern 3
+            from 0 onwards, generate pattern 3
             
     NeuronPatterns: <length 3 cell array>
     
@@ -145,24 +143,23 @@ The above corresponds to the following tree:
     7: (0     , 800   , 80   , 2) -> Parent 6
     8: (0     , 0     , 0    , 3) -> Parent 7
 
-### Neuron Pattern Specification
+###   Neuron Pattern Specification
 
 The NeuronPattern is a vector that has the following pattern
 
-sequence of either:
+Sequence of either:
 
 1.  Ranges: 
     
-    specified by two consecutive numbers representing RangeStart 
-    and RangeEnd (inclusive). The range can be either increasing 
-    or decreasing
+    specified by two consecutive numbers representing RangeStart and RangeEnd 
+    (inclusive). The range can be either increasing or decreasing
     
 2.  String of Individual Neurons:
     
-    specified by a sequence of numbers denoting the neuron to be 
-    injected enclosed within an opening and closing 0. If there 
-    is no closing 0, all numbers specified after the opening 0 are 
-    treated as Individual neurons and not ranges.
+    specified by a sequence of numbers denoting the neuron to be injected 
+    enclosed within an opening and closing 0. If there is no closing 0, all 
+    numbers specified after the opening 0 are treated as Individual neurons 
+    and not ranges.
 
 e.g. 
 
@@ -171,16 +168,129 @@ e.g.
     30 2  0  1  2  5    - 30...2,1,2,5
     30 2  5  10 0  1  2 - 30...2,5...10,1,2
 
-### MATLAB Helper functions 
+###   MATLAB Helper functions
 
-The function AddInterval has been added inside the MatlabSource folder.
-This function, takes a tree (an IExtPattern struct instance), takes the
-details of the interval to be added as arguments, and returns the new tree.
-Hopefully, given the nature of the function, these operations will be done
-in-place.
+####    AddInterval()
 
-## Variables
+#####     Function Definition
 
+    [ IExtPattern ] = AddInterval(
+                          IExtPattern, 
+                          ParentIndex, 
+                          StartOffset, 
+                          EndOffset, 
+                          PatternTimePeriod, 
+                          NeuronPatternIndex )
+
+#####     Input Arguments
+
+    IExtPattern        - The existing pattern tree
+    ParentIndex        - The Index of the parent of the Interval Node being 
+                         added
+    StartOffset        - The Start offset from the beginning of the parent 
+                         interval at which this interval starts
+    EndOffset          - The End offset from the beginning of the parent 
+                         interval at which this interval starts
+    PatternTimePeriod  - The time period with which subintervals recur inside 
+                         this interval.
+    NeuronPatternIndex - The Index of the Neuron Pattern (if any) that is to 
+                         be played in the array
+
+#####     Output Arguments
+
+    IExtPattern - The tree with the new node added.
+
+#####     Function Description
+
+The function AddInterval has been added inside the MatlabSource folder. This 
+function, takes a tree (an IExtPattern struct instance), takes the details of 
+the interval to be added as arguments, and returns the new tree. Hopefully, 
+given the nature of the function, these operations will be done in-place.
+
+####    getEmptyIExtPattern() Function
+
+#####     Function Definition
+
+    [ IExtPattern ] = getEmptyIExtPattern()
+
+#####     Input Arguments
+
+    None
+
+#####     Output Arguments
+
+    IExtPattern - An Empty Pattern Tree
+
+#####     Function Description
+
+This function creates an empty Pattern Tree into which we add Intervals using 
+the __AddInterval()__ function.
+
+####    getIExtPatternFromString()
+
+#####     Function Definition
+
+    [ IExtPattern ] = getIExtPatternFromString( PatternStringArray )
+
+#####     Input Arguments
+
+    PatternStringArray - This is either a multiline string OR a cell array of 
+                         strings which represents the tree. The format for 
+                         specifying the string is given below in the function
+                         description.
+
+#####     Output Arguments
+
+    IExtPattern - The pattern tree represented by the PatternStringArray
+
+#####     Function Description
+
+The Format of each line in the __PatternStringArray__ is as below:
+
+```bash
+  
+  "<indent spaces>", followed by
+  
+  "from\s+" FOLLOWED BY
+  
+  EITHER "<Number>"                        # Default units of ms
+  OR     ("<Number>" followed by 's')      # Use seconds as unit
+  OR     ("<Number>" followed by 'ms')     # Use milliseconds as unit
+  # NOTE that there mustn't be a space between the number and the unit
+  FOLLOWED BY
+  
+  EITHER                                   # This is the case of 
+                                           # 'from .. to ..'
+      "\s+to" FOLLOWED BY
+      EITHER "<Number>"                    # This is the units options
+      OR     ("<Number>" followed by 's')  # similar to above
+      OR     ("<Number>" followed by 'ms')
+  OR                                       # This is the case of 
+      "\s+onwards"                         # 'from .. onwards'
+  FOLLOWED BY
+  "\s+,?" FOLLOWED BY                      # Space and Optional comma 
+  
+  EITHER                                   # Specify time period (, Every ..)
+      "Every\s+" FOLLOWED BY
+      EITHER "<Number>"                    # This is the units options
+      OR     ("<Number>" followed by 's')  # similar to above
+      OR     ("<Number>" followed by 'ms')
+  OR                                       # Specify Neuron Pattern 
+      "Generate (Pattern)?" followed by
+      EITHER "<Number>"                    # This is the units options
+      OR     ("<Number>" followed by 's')  # similar to above
+      OR     ("<Number>" followed by 'ms')
+  FOLLOWED BY
+  "\s*", FOLLOWED BY
+  END OF LINE
+```
+
+A line with indentation greater than the previous line is expected to be a 
+child interval of the previous interval. All children intervals of a part-
+icular interval must be indented at the same level. For examples, look at 
+the examples above.
+
+##  Variables
 
 ```
     | Variable                | Type     | Description
@@ -205,11 +315,11 @@ in-place.
   6.| EndOffsetArray          | Input    | Array of EndOffset of the Time 
     |                         |          | Intervals
     |                         |          |
-  7.| PatternTimePeriodArray  | Input    | Array of PatternTimePeriod of the Time 
-    |                         |          | Intervals
+  7.| PatternTimePeriodArray  | Input    | Array of PatternTimePeriod of the 
+    |                         |          | Time Intervals.
     |                         |          | 
-  8.| NeuronPatternIndexArray | Input    | Array of NeuronPatternIndex of the Time 
-    |                         |          | Intervals
+  8.| NeuronPatternIndexArray | Input    | Array of NeuronPatternIndex of the 
+    |                         |          | Time Intervals
     |                         |          | 
   9.| ParentIndexArray        | Input    | Array of ParentIndex of the Time
     |                         |          | Intervals
@@ -225,6 +335,7 @@ in-place.
     |                         |          |
  13.| IExtAmplitude           | Input    | Amplitude of External Stimulation
     |                         |          |
- 14.| AvgRandSpikeFreq        | Input    | Average Frequency of random stimulation
+ 14.| AvgRandSpikeFreq        | Input    | Average Frequency of random 
+    |                         |          | stimulation
 ====|=========================|==========|====================================
 ```
