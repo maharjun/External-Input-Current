@@ -5,24 +5,14 @@
 #include <vector>
 #include <algorithm>
 
-#include "../Network.hpp"
-#include "../NeuronSim.hpp"
+#include <Headers/Network.hpp>
+#include <Headers/NeuronSim.hpp>
 
 #include <matrix.h>
 
-#if defined TIME_DEL_NET_SIM_AS_SUB
-	#define HEADER_PATHS_TDNS ..
-#elif !defined HEADER_PATHS_TDNS
-	#define HEADER_PATHS_TDNS .
-#endif
-
-#define SETQUOTE(A) #A
-
-#define SETQUOTE_EXPAND(A) SETQUOTE(A)
-
-#include SETQUOTE_EXPAND(../../../HEADER_PATHS_TDNS/MexMemoryInterfacing/Headers/MexMem.hpp)
-#include SETQUOTE_EXPAND(../../../HEADER_PATHS_TDNS/MexMemoryInterfacing/Headers/GenericMexIO.hpp)
-#include SETQUOTE_EXPAND(../../../HEADER_PATHS_TDNS/RandomNumGen/Headers/FiltRandomTBB.hpp)
+#include <MexMemoryInterfacing/Headers/MexMem.hpp>
+#include <MexMemoryInterfacing/Headers/GenericMexIO.hpp>
+#include <RandomNumGen/Headers/FiltRandomTBB.hpp>
 
 ////////////////////////////////////////////////////////
 // Input and Initialization functions 
