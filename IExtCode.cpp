@@ -583,8 +583,9 @@ void IExtInterface::updateIExt(
 	// Added to deliberate external current
 	//if (Time  < 100*1000*onemsbyTstep)
 
-	int   NoOfRandomIters   = int(IntVars.AvgRandSpikeFreq*1000 + 0.5)/N;
-	float RemainingProbforN = (int(IntVars.AvgRandSpikeFreq*1000 + 0.5) - N*NoOfRandomIters) / (float)N;
+	int   TotalSpikesIn1Sec = int(IntVars.AvgRandSpikeFreq*N + 0.5f);
+	int   NoOfRandomIters   = TotalSpikesIn1Sec/(1000*onemsbyTstep);
+	float RemainingProbforN = float(TotalSpikesIn1Sec - 1000*onemsbyTstep*NoOfRandomIters) / (1000*onemsbyTstep);
 
 	for (int i = 0; i < NoOfRandomIters; ++i) {
 		int CurrentRandNeuron = (IntVars.IExtGen() % N) + 1;
